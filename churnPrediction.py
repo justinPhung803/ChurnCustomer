@@ -16,8 +16,8 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import classification_report
-from sklearn.metrics import r2_score
+from sklearn.metrics import f1_score, plot_confusion_matrix
+from sklearn.svm import SVC
 
 from imblearn.over_sampling import SMOTE
 
@@ -75,18 +75,19 @@ def model_design(feature, my_metrics, my_lr):
 
 #Model Hyperparameters:
 EPOCHS=100
-BATCH_SIZE=16
+BATCH_SIZE=32
 VALIDATION_SPLIT=0.25
 learning_rate=0.001
 es=EarlyStopping(monitor='val_loss', mode='min', patience=20)
-classification_threshold = 0.35
+classification_threshold = 0.52
 METRICS = [
       tf.keras.metrics.BinaryAccuracy(name='accuracy', 
                                       threshold=classification_threshold),
       tf.keras.metrics.Precision(thresholds=classification_threshold,
                                  name='precision' 
                                  ),
-      tf.keras.metrics.Recall(thresholds=classification_threshold,name='recall')
+      tf.keras.metrics.Recall(thresholds=classification_threshold,name='recall'),
+      tf.keras.metrics.AUC(num_thresholds=100, name='auc')
 ]
 
 
@@ -99,8 +100,15 @@ val_loss=model.evaluate(feature_test,label_test)
 print("loss: ", val_loss)
 
 
+#Calculate F1_score
+label_predict=(model.predict(feature_test) > 0.5).astype("int32")
+f1=f1_score(label_test,label_predict, average='weighted')
+print("f1_score: ",f1)
+
+
 #Plotting function
 def plot_curve(epochs, hist, list_of_metrics):
+    #Plot Metrics:
     plt.figure()
     plt.xlabel("Epoch")
     plt.ylabel("Value")
@@ -110,10 +118,18 @@ def plot_curve(epochs, hist, list_of_metrics):
         plt.plot(epochs[1:], x[1:], label=m)
 
     plt.legend()
+
+    #Plot Confusion Matrix
+    clf=SVC(random_state=0)
+    clf.fit(feature_train,label_train)
+    plot_confusion_matrix(clf, feature_test,label_test)
     plt.show()
 
 print("Defined the plot_curve function.")
 epochs=history.epoch
 hist=pd.DataFrame(history.history)
-list_of_metrics_to_plot = ['accuracy', 'precision', 'recall'] 
+list_of_metrics_to_plot = ['accuracy', 'precision', 'recall','auc'] 
 plot_curve(epochs, hist, list_of_metrics_to_plot)
+
+
+
