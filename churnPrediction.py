@@ -5,11 +5,9 @@ from tensorflow import keras
 import sklearn
 import matplotlib
 import matplotlib.pyplot as plt
-import math
 
 from keras import layers
 from keras import Sequential
-from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
